@@ -1,10 +1,12 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/efd8b731-eaa6-4d69-832e-980ba7a623b4" width="30%" alt="Base Framework"><br><br>
-  <img src="https://github.com/user-attachments/assets/972678e3-d918-4742-976b-8ea40d1160c5" width="30%" alt="Sensor Alignment"><br><br>
-  <img src="https://github.com/user-attachments/assets/d2066146-5bd3-4f16-8742-83fdc582a477" width="30%" alt="Drivetrain Overview">
+  <img src="https://github.com/user-attachments/assets/efd8b731-eaa6-4d69-832e-980ba7a623b4" width="45%" alt="Base Framework" style="margin-right: 10px;">
+  <img src="https://github.com/user-attachments/assets/972678e3-d918-4742-976b-8ea40d1160c5" width="45%" alt="Sensor Alignment">
+  <br><br>
+  <img src="https://github.com/user-attachments/assets/d2066146-5bd3-4f16-8742-83fdc582a477" width="45%" alt="Drivetrain Overview" style="margin-right: 10px;">
+  <img src="https://github.com/user-attachments/assets/5d08eaa9-e2a4-45eb-a8d3-79bdd238a1cc" width="45%" alt="Circuit Framework">
+  <br><br>
+  <img src="https://github.com/user-attachments/assets/d2b4cee0-3b55-491e-8cd4-7652361624ee" width="50%" alt="System Integration">
 </p>
-<img width="45%" alt="image" src="https://github.com/user-attachments/assets/5d08eaa9-e2a4-45eb-a8d3-79bdd238a1cc" />
-<img width="45%" alt="image" src="https://github.com/user-attachments/assets/d2b4cee0-3b55-491e-8cd4-7652361624ee" />
 
 ## 🚀 Features
 * **Autonomous Shopper Following:** Utilizes sensor-driven navigation to safely follow a user through market aisles.
