@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────
+#  Smart Cart — FIXED requirements.txt
+#  Tested for Raspberry Pi (ARM, Python 3.11/3.12)
+# ─────────────────────────────────────────────
+#
+#  INSTALL ORDER (important!):
+#
+#  1. System libraries first:
+#     sudo apt update
+#     sudo apt install libzbar0 python3-pip python3-dev libatlas-base-dev -y
+#
+#  2. PyTorch for Pi (ARM CPU):
+#     pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --break-system-packages
+#
+#  3. Then install this file:
+#     pip install -r requirements.txt --break-system-packages
+#
+# ─────────────────────────────────────────────
+
+# Web framework
+flask==3.0.0
+flask-socketio==5.3.4
+
+# Async mode (gevent — works on Python 3.12, replaces eventlet)
+gevent==23.9.1
+gevent-websocket==0.10.1
+
+# Camera & Vision (headless = lighter, no GUI deps)
+opencv-python-headless==4.9.0.80
+
+# YOLO object detection (install torch FIRST before this)
+ultralytics==8.1.0
+
+# Barcode reading (requires: sudo apt install libzbar0 -y)
+pyzbar==0.1.9
+
+# Arduino serial communication
+pyserial==3.5
+
+# Barcode generation
+python-barcode==0.15.1
+reportlab==4.1.0
