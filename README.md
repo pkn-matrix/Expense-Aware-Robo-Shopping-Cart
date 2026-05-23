@@ -1,6 +1,6 @@
-<img width="2160" height="3010" alt="IMG-20260503-WA0032" src="https://github.com/user-attachments/assets/a6f20ae8-1211-40a6-9480-9e42368b248b" />
-<img width="2160" height="3398" alt="IMG-20260503-WA0026" src="https://github.com/user-attachments/assets/06a9f613-73bb-41f0-9b3a-d47b73f47676" />
-<img width="3024" height="4032" alt="IMG-20260503-WA0015" src="https://github.com/user-attachments/assets/bafc75e0-64e6-4113-9042-b6986138cf7c" />
+<img width="3024" height="4032" alt="IMG-20260503-WA0015" src="https://github.com/user-attachments/assets/efd8b731-eaa6-4d69-832e-980ba7a623b4" />
+<img width="2160" height="3398" alt="IMG-20260503-WA0026" src="https://github.com/user-attachments/assets/972678e3-d918-4742-976b-8ea40d1160c5" />
+<img width="2160" height="3010" alt="IMG-20260503-WA0032" src="https://github.com/user-attachments/assets/d2066146-5bd3-4f16-8742-83fdc582a477" />
 ## 🚀 Features
 * **Autonomous Shopper Following:** Utilizes sensor-driven navigation to safely follow a user through market aisles.
 * **Real-Time Expense Tracking:** Automatically logs items as they are added to the cart and displays a running total.
