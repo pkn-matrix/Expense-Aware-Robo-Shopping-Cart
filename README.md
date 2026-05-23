@@ -3,6 +3,7 @@
   <img src="https://github.com/user-attachments/assets/972678e3-d918-4742-976b-8ea40d1160c5" width="45%" alt="Sensor Alignment"><br><br>
   <img src="https://github.com/user-attachments/assets/d2066146-5bd3-4f16-8742-83fdc582a477" width="45%" alt="Drivetrain Overview">
 </p>
+<img width="45%" alt="image" src="https://github.com/user-attachments/assets/5d08eaa9-e2a4-45eb-a8d3-79bdd238a1cc" />
 
 ## 🚀 Features
 * **Autonomous Shopper Following:** Utilizes sensor-driven navigation to safely follow a user through market aisles.
