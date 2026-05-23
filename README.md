@@ -1,3 +1,5 @@
+<img width="2160" height="3010" alt="IMG-20260503-WA0032" src="https://github.com/user-attachments/assets/a6f20ae8-1211-40a6-9480-9e42368b248b" />
+<img width="2160" height="3398" alt="IMG-20260503-WA0026" src="https://github.com/user-attachments/assets/06a9f613-73bb-41f0-9b3a-d47b73f47676" />
 <img width="3024" height="4032" alt="IMG-20260503-WA0015" src="https://github.com/user-attachments/assets/bafc75e0-64e6-4113-9042-b6986138cf7c" />
 ## 🚀 Features
 * **Autonomous Shopper Following:** Utilizes sensor-driven navigation to safely follow a user through market aisles.
