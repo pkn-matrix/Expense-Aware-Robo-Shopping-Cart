@@ -4,6 +4,7 @@
   <img src="https://github.com/user-attachments/assets/d2066146-5bd3-4f16-8742-83fdc582a477" width="45%" alt="Drivetrain Overview">
 </p>
 <img width="45%" alt="image" src="https://github.com/user-attachments/assets/5d08eaa9-e2a4-45eb-a8d3-79bdd238a1cc" />
+<img width="45%" alt="image" src="https://github.com/user-attachments/assets/d2b4cee0-3b55-491e-8cd4-7652361624ee" />
 
 ## 🚀 Features
 * **Autonomous Shopper Following:** Utilizes sensor-driven navigation to safely follow a user through market aisles.
