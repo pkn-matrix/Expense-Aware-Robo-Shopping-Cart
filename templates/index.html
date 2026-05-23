@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🛒 Smart Cart</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg      : #1e1e2e;
+      --surface : #313244;
+      --border  : #45475a;
+      --text    : #cdd6f4;
+      --subtext : #a6adc8;
+      --green   : #a6e3a1;
+      --red     : #f38ba8;
+      --orange  : #fab387;
+      --blue    : #89b4fa;
+      --purple  : #cba6f7;
+      --dark    : #1e1e2e;
+    }
+
+    body {
+      font-family   : 'Segoe UI', Arial, sans-serif;
+      background    : var(--bg);
+      color         : var(--text);
+      height        : 100vh;
+      display       : flex;
+      flex-direction: column;
+      padding       : 16px;
+      gap           : 10px;
+      overflow      : hidden;
+    }
+
+    /* ── Header ──────────────────────────────── */
+    header {
+      display        : flex;
+      justify-content: space-between;
+      align-items    : center;
+    }
+    .header-left h1 { font-size: 22px; font-weight: 700; }
+    .header-left p  { font-size: 11px; color: var(--subtext); margin-top: 2px; }
+    .conn-dot {
+      display      : inline-block;
+      width        : 8px; height: 8px;
+      border-radius: 50%;
+      background   : var(--red);
+      margin-right : 5px;
+      transition   : background 0.3s;
+    }
+    .conn-dot.online { background: var(--green); }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Buttons ─────────────────────────────── */
+    .btn {
+      padding      : 8px 16px;
+      border-radius: 8px;
+      border       : none;
+      font-size    : 13px;
+      font-weight  : 700;
+      cursor       : pointer;
+      transition   : opacity 0.2s, transform 0.1s;
+    }
+    .btn:hover  { opacity: 0.85; }
+    .btn:active { transform: scale(0.97); }
+    .btn-blue   { background: var(--blue);   color: var(--dark); }
+    .btn-red    { background: var(--red);    color: var(--dark); }
+    .btn-orange { background: var(--orange); color: var(--dark); }
+    .btn-green  { background: var(--green);  color: var(--dark); }
+    .btn-surface{ background: var(--surface); color: var(--text);
+                  border: 1px solid var(--border); }
+
+    /* ── SCAN BUTTON ────────────────────────── */
+    .scan-section {
+      display        : flex;
+      justify-content: center;
+    }
+    .btn-scan {
+      padding      : 14px 40px;
+      border-radius: 14px;
+      border       : none;
+      font-size    : 18px;
+      font-weight  : 700;
+      cursor       : pointer;
+      background   : linear-gradient(135deg, #89b4fa, #cba6f7);
+      color        : var(--dark);
+      box-shadow   : 0 4px 20px rgba(137,180,250,0.4);
+      transition   : transform 0.15s, box-shadow 0.15s;
+      width        : 100%;
+      max-width    : 400px;
+      letter-spacing: 0.5px;
+    }
+    .btn-scan:hover {
+      transform : translateY(-2px);
+      box-shadow: 0 6px 28px rgba(137,180,250,0.55);
+    }
+    .btn-scan:active { transform: scale(0.97); }
+    .btn-scan.scanning {
+      background: linear-gradient(135deg, #f38ba8, #fab387);
+      animation : pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 4px 20px rgba(243,139,168,0.4); }
+      50%      { box-shadow: 0 4px 32px rgba(243,139,168,0.8); }
+    }
+
+    /* ── Budget row ──────────────────────────── */
+    .budget-row {
+      display        : flex;
+      gap            : 8px;
+      align-items    : center;
+      justify-content: center;
+      flex-wrap      : wrap;
+    }
+    .budget-row label { font-size: 13px; color: var(--subtext); }
+    .budget-row input {
+      width        : 120px;
+      padding      : 7px 10px;
+      border-radius: 8px;
+      border       : 1px solid var(--border);
+      background   : var(--surface);
+      color        : var(--text);
+      font-size    : 14px;
+    }
+    .budget-row input:focus { outline: 2px solid var(--blue); }
+
+    /* ── Mode badge ──────────────────────────── */
+    .mode-row {
+      display        : flex;
+      justify-content: center;
+      align-items    : center;
+      gap            : 8px;
+    }
+    .mode-badge {
+      padding      : 3px 12px;
+      border-radius: 20px;
+      font-size    : 12px;
+      font-weight  : 700;
+      background   : var(--green);
+      color        : var(--dark);
+      transition   : background 0.3s;
+    }
+    .mode-badge.stopped { background: var(--orange); }
+
+    /* ── Summary cards ───────────────────────── */
+    .summary {
+      display              : grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap                  : 8px;
+    }
+    .card {
+      background   : var(--surface);
+      border-radius: 10px;
+      padding      : 10px;
+      text-align   : center;
+    }
+    .card .label {
+      font-size     : 10px;
+      color         : var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .card .value  { font-size: 20px; font-weight: 700; margin-top: 3px; }
+    #totalValue     { color: var(--red);   }
+    #budgetValue    { color: var(--green); }
+    #remainingValue { color: var(--blue);  }
+
+    /* ── Status bar ──────────────────────────── */
+    .status-bar {
+      text-align   : center;
+      padding      : 9px;
+      border-radius: 10px;
+      font-size    : 16px;
+      font-weight  : 700;
+      background   : var(--blue);
+      color        : var(--dark);
+      transition   : background 0.4s;
+    }
+
+    /* ── Cart list ───────────────────────────── */
+    .cart-section {
+      flex    : 1;
+      overflow: hidden;
+      display : flex;
+      flex-direction: column;
+    }
+    .cart-header {
+      display        : flex;
+      justify-content: space-between;
+      align-items    : center;
+      margin-bottom  : 5px;
+    }
+    .cart-header span { font-size: 12px; color: var(--subtext); }
+    .cart-list {
+      background   : var(--surface);
+      border-radius: 12px;
+      padding      : 6px;
+      overflow-y   : auto;
+      flex         : 1;
+    }
+    .cart-list::-webkit-scrollbar       { width: 5px; }
+    .cart-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .empty-msg {
+      text-align: center;
+      color     : var(--subtext);
+      padding   : 24px 0;
+      font-size : 13px;
+    }
+    .cart-item {
+      display        : flex;
+      justify-content: space-between;
+      align-items    : center;
+      padding        : 8px 10px;
+      border-bottom  : 1px solid var(--border);
+      font-size      : 13px;
+      gap            : 8px;
+      animation      : slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .item-name  { flex: 1; }
+    .item-price { color: var(--green); font-weight: 700; min-width: 55px; text-align: right; }
+    .remove-btn {
+      background   : var(--red);
+      color        : var(--dark);
+      border       : none;
+      border-radius: 6px;
+      padding      : 3px 8px;
+      cursor       : pointer;
+      font-weight  : 700;
+      font-size    : 12px;
+    }
+
+    /* ════════════════════════════════════════
+       CAMERA SCAN MODAL
+    ════════════════════════════════════════ */
+    .scan-overlay {
+      position       : fixed;
+      inset          : 0;
+      background     : rgba(0,0,0,0.88);
+      display        : none;
+      align-items    : center;
+      justify-content: center;
+      z-index        : 200;
+      backdrop-filter: blur(6px);
+    }
+    .scan-overlay.show { display: flex; }
+
+    .scan-modal {
+      background   : var(--surface);
+      border-radius: 20px;
+      padding      : 20px;
+      width        : 94%;
+      max-width    : 460px;
+      text-align   : center;
+      border       : 1px solid var(--border);
+      box-shadow   : 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .scan-modal h2 {
+      font-size    : 18px;
+      margin-bottom: 4px;
+      color        : var(--blue);
+    }
+    .scan-hint {
+      font-size    : 12px;
+      color        : var(--subtext);
+      margin-bottom: 12px;
+    }
+
+    /* Camera feed box */
+    .camera-box {
+      position     : relative;
+      width        : 100%;
+      border-radius: 14px;
+      overflow     : hidden;
+      background   : #000;
+      margin-bottom: 12px;
+      aspect-ratio : 4/3;
+    }
+    #cameraFeed {
+      width     : 100%;
+      height    : 100%;
+      object-fit: cover;
+      display   : block;
+    }
+
+    /* Scanning frame overlay */
+    .scan-frame {
+      position      : absolute;
+      inset         : 0;
+      pointer-events: none;
+      display       : flex;
+      align-items   : center;
+      justify-content: center;
+    }
+    .frame-box {
+      position     : relative;
+      width        : 65%; height: 50%;
+      border       : 2px solid rgba(137,180,250,0.5);
+      border-radius: 10px;
+    }
+    /* Corner markers */
+    .c { position:absolute; width:22px; height:22px; border-color:var(--blue); border-style:solid; }
+    .c.tl { top:-2px; left:-2px;   border-width:3px 0 0 3px; border-radius:5px 0 0 0; }
+    .c.tr { top:-2px; right:-2px;  border-width:3px 3px 0 0; border-radius:0 5px 0 0; }
+    .c.bl { bottom:-2px; left:-2px; border-width:0 0 3px 3px; border-radius:0 0 0 5px; }
+    .c.br { bottom:-2px; right:-2px;border-width:0 3px 3px 0; border-radius:0 0 5px 0; }
+    /* Animated scan line */
+    .scan-line {
+      position  : absolute;
+      left:5%; width:90%; height:2px;
+      background: linear-gradient(90deg, transparent, var(--blue), transparent);
+      animation : scanAnim 1.8s ease-in-out infinite;
+    }
+    @keyframes scanAnim {
+      0%   { top:10%; }
+      50%  { top:85%; }
+      100% { top:10%; }
+    }
+
+    /* Camera bottom status */
+    .cam-status {
+      position     : absolute;
+      bottom: 8px; left:50%;
+      transform    : translateX(-50%);
+      background   : rgba(0,0,0,0.72);
+      color        : #fff;
+      padding      : 4px 14px;
+      border-radius: 20px;
+      font-size    : 11px;
+      font-weight  : 600;
+      white-space  : nowrap;
+    }
+
+    /* Result banner */
+    .scan-result {
+      display      : none;
+      padding      : 11px 14px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size    : 14px;
+      font-weight  : 600;
+      animation    : popIn 0.3s ease;
+    }
+    @keyframes popIn {
+      from { transform:scale(0.9); opacity:0; }
+      to   { transform:scale(1);   opacity:1; }
+    }
+    .scan-result.found {
+      display   : block;
+      background: rgba(166,227,161,0.15);
+      border    : 1px solid var(--green);
+      color     : var(--green);
+    }
+    .scan-result.not-found {
+      display   : block;
+      background: rgba(243,139,168,0.15);
+      border    : 1px solid var(--red);
+      color     : var(--red);
+    }
+
+    /* Modal action buttons */
+    .modal-btns { display:flex; gap:10px; }
+    .modal-btns .btn { flex:1; padding:10px; font-size:14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <h1>🛒 Smart Cart</h1>
+      <p>
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connStatus">Connecting...</span>
+      </p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-orange" id="modeBtn" onclick="toggleMode()">⏸ Pause</button>
+      <a href="/barcodes" class="btn btn-surface">🏷️</a>
+    </div>
+  </header>
+
+  <!-- Budget -->
+  <div class="budget-row">
+    <label for="budgetInput">Budget $</label>
+    <input type="number" id="budgetInput" placeholder="e.g. 50.00" min="0" step="0.01"/>
+    <button class="btn btn-blue" onclick="setBudget()">Set</button>
+    <button class="btn btn-red"  onclick="clearCart()">🔄 Clear</button>
+  </div>
+
+  <!-- Mode badge -->
+  <div class="mode-row">
+    <span style="color:var(--subtext);font-size:12px">Cart Mode:</span>
+    <span class="mode-badge" id="modeBadge">🟢 FOLLOWING</span>
+  </div>
+
+  <!-- ★ BIG SCAN BUTTON ★ -->
+  <div class="scan-section">
+    <button class="btn-scan" id="scanBtn" onclick="openScanModal()">
+      📷 &nbsp; Scan Barcode
+    </button>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="card">
+      <div class="label">Total Spent</div>
+      <div class="value" id="totalValue">$0.00</div>
+    </div>
+    <div class="card">
+      <div class="label">Budget</div>
+      <div class="value" id="budgetValue">$0.00</div>
+    </div>
+    <div class="card">
+      <div class="label">Remaining</div>
+      <div class="value" id="remainingValue">$0.00</div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar" id="statusBar">⚙️ Please set a budget</div>
+
+  <!-- Cart list -->
+  <div class="cart-section">
+    <div class="cart-header">
+      <span>🧾 Scanned Items</span>
+      <span id="itemCount">0 items</span>
+    </div>
+    <div class="cart-list" id="cartList">
+      <div class="empty-msg">
+        No items yet.<br>Tap <b>📷 Scan Barcode</b> to begin!
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ CAMERA SCAN MODAL ════ -->
+  <div class="scan-overlay" id="scanOverlay">
+    <div class="scan-modal">
+
+      <h2>📷 Barcode Scanner</h2>
+      <p class="scan-hint">Hold barcode steady in front of camera</p>
+
+      <!-- Live camera -->
+      <div class="camera-box">
+        <img id="cameraFeed" src="" alt="Camera"/>
+
+        <!-- Targeting frame -->
+        <div class="scan-frame">
+          <div class="frame-box">
+            <div class="c tl"></div>
+            <div class="c tr"></div>
+            <div class="c bl"></div>
+            <div class="c br"></div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+
+        <!-- Status pill on camera -->
+        <div class="cam-status" id="camStatus">🔍 Scanning...</div>
+      </div>
+
+      <!-- Result banner -->
+      <div class="scan-result" id="scanResult"></div>
+
+      <!-- Buttons -->
+      <div class="modal-btns">
+        <button class="btn btn-green" id="reScanBtn"
+          onclick="startScanning()" style="display:none">
+          🔄 Scan Again
+        </button>
+        <button class="btn btn-red" onclick="closeScanModal()">✕ Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const socket = io({ reconnection:true, reconnectionDelay:1000, reconnectionAttempts:Infinity });
+
+    let scanInterval = null;
+    let scanDone     = false;
+
+    // ── Connection ────────────────────────────
+    socket.on("connect", () => {
+      document.getElementById("connDot").classList.add("online");
+      document.getElementById("connStatus").textContent = "Connected";
+    });
+    socket.on("disconnect", () => {
+      document.getElementById("connDot").classList.remove("online");
+      document.getElementById("connStatus").textContent = "Reconnecting...";
+    });
+
+    // ── Cart actions ──────────────────────────
+    function setBudget() {
+      const v = parseFloat(document.getElementById("budgetInput").value);
+      if (!isNaN(v) && v >= 0) socket.emit("set_budget", { budget: v });
+    }
+    function clearCart() {
+      if (confirm("Clear all items from cart?")) socket.emit("clear_cart");
+    }
+    function removeItem(i) { socket.emit("remove_item", { index: i }); }
+    function toggleMode()  { socket.emit("toggle_mode"); }
+    document.getElementById("budgetInput")
+      .addEventListener("keypress", e => { if (e.key==="Enter") setBudget(); });
+
+    // ════════════════════════════════════════
+    //  SCAN MODAL FUNCTIONS
+    // ════════════════════════════════════════
+
+    function openScanModal() {
+      // Reset UI
+      scanDone = false;
+      document.getElementById("scanResult").className   = "scan-result";
+      document.getElementById("scanResult").textContent = "";
+      document.getElementById("reScanBtn").style.display = "none";
+      document.getElementById("camStatus").textContent   = "🔍 Scanning...";
+
+      // Show modal
+      document.getElementById("scanOverlay").classList.add("show");
+
+      // Style scan button
+      document.getElementById("scanBtn").classList.add("scanning");
+      document.getElementById("scanBtn").textContent = "📷  Scanning...";
+
+      // ★ Switch to BILLING mode — stops person detection
+      socket.emit("set_billing_mode");
+
+      // Start live camera stream (MJPEG from Flask)
+      document.getElementById("cameraFeed").src = "/video_feed?" + Date.now();
+
+      // Begin scan polling
+      startScanning();
+    }
+
+    function closeScanModal() {
+      document.getElementById("scanOverlay").classList.remove("show");
+
+      // Stop camera stream
+      document.getElementById("cameraFeed").src = "";
+
+      // Stop scan polling
+      stopScanning();
+
+      // Reset button
+      document.getElementById("scanBtn").classList.remove("scanning");
+      document.getElementById("scanBtn").textContent = "📷  Scan Barcode";
+
+      // ★ Return to FOLLOWING mode — resumes person detection
+      socket.emit("set_following_mode");
+    }
+
+    function startScanning() {
+      scanDone = false;
+      document.getElementById("scanResult").className   = "scan-result";
+      document.getElementById("reScanBtn").style.display = "none";
+      document.getElementById("camStatus").textContent   = "🔍 Scanning...";
+      stopScanning();
+      // Ask server to scan every 1.5 seconds
+      scanInterval = setInterval(() => {
+        if (!scanDone) socket.emit("manual_scan");
+      }, 1500);
+    }
+
+    function stopScanning() {
+      if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+    }
+
+    // ── Server returns scan result ────────────
+    socket.on("scan_result", (data) => {
+      if (scanDone) return;
+
+      const resultEl = document.getElementById("scanResult");
+      const camSt    = document.getElementById("camStatus");
+
+      if (data.found) {
+        scanDone = true;
+        stopScanning();
+
+        resultEl.textContent = `✅  ${data.name}  —  $${parseFloat(data.price).toFixed(2)}`;
+        resultEl.className   = "scan-result found";
+        camSt.textContent    = "✅ Product detected!";
+
+        document.getElementById("scanBtn").classList.remove("scanning");
+        document.getElementById("scanBtn").textContent = "📷  Scan Barcode";
+        document.getElementById("reScanBtn").style.display = "block";
+
+        // Auto-close after 2.5 seconds
+        setTimeout(() => {
+          if (document.getElementById("scanOverlay").classList.contains("show")) {
+            closeScanModal();
+          }
+        }, 2500);
+
+      } else {
+        camSt.textContent = "⚠️ No barcode — move closer...";
+      }
+    });
+
+    socket.on("scan_error", (data) => {
+      document.getElementById("camStatus").textContent = "❌ " + data.message;
+    });
+
+    // Close on overlay click
+    document.getElementById("scanOverlay").addEventListener("click", e => {
+      if (e.target.id === "scanOverlay") closeScanModal();
+    });
+
+    // ════════════════════════════════════════
+    //  CART UPDATE
+    // ════════════════════════════════════════
+    socket.on("cart_update", (data) => {
+      document.getElementById("totalValue").textContent     = `$${data.total.toFixed(2)}`;
+      document.getElementById("budgetValue").textContent    = `$${data.budget.toFixed(2)}`;
+      document.getElementById("remainingValue").textContent = `$${data.remaining.toFixed(2)}`;
+      document.getElementById("itemCount").textContent      =
+        `${data.items.length} item${data.items.length!==1?'s':''}`;
+
+      const bar = document.getElementById("statusBar");
+      const clr = {green:"#a6e3a1",red:"#f38ba8",orange:"#fab387",blue:"#89b4fa"};
+      bar.textContent      = data.status;
+      bar.style.background = clr[data.color] || clr.blue;
+
+      const rem = document.getElementById("remainingValue");
+      if      (data.remaining < 0)                                   rem.style.color="#f38ba8";
+      else if (data.budget>0 && data.remaining < data.budget*0.1)   rem.style.color="#fab387";
+      else                                                           rem.style.color="#89b4fa";
+
+      const list = document.getElementById("cartList");
+      if (data.items.length === 0) {
+        list.innerHTML = `<div class="empty-msg">No items yet.<br>Tap <b>📷 Scan Barcode</b> to begin!</div>`;
+      } else {
+        list.innerHTML = data.items.map((item,i) => `
+          <div class="cart-item">
+            <span class="item-name">${item.name}</span>
+            <span class="item-price">$${item.price.toFixed(2)}</span>
+            <button class="remove-btn" onclick="removeItem(${i})">✕</button>
+          </div>`).join("");
+        list.scrollTop = list.scrollHeight;
+      }
+    });
+
+    socket.on("mode_update", (data) => {
+      const badge = document.getElementById("modeBadge");
+      const btn   = document.getElementById("modeBtn");
+      if (data.mode === "FOLLOWING") {
+        badge.textContent      = "🟢 FOLLOWING";
+        badge.className        = "mode-badge";
+        badge.style.background = "var(--green)";
+        btn.textContent        = "⏸ Pause";
+      } else if (data.mode === "BILLING") {
+        badge.textContent      = "🧾 BILLING";
+        badge.className        = "mode-badge";
+        badge.style.background = "var(--blue)";
+        btn.textContent        = "▶ Resume";
+      } else {
+        badge.textContent      = "🔴 STOPPED";
+        badge.className        = "mode-badge stopped";
+        badge.style.background = "var(--orange)";
+        btn.textContent        = "▶ Resume";
+      }
+    });
+  </script>
+</body>
+</html>

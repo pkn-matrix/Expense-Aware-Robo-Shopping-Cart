@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🏷️ Barcode Manager — Smart Cart</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg     : #1e1e2e;
+      --surface: #313244;
+      --border : #45475a;
+      --text   : #cdd6f4;
+      --subtext: #a6adc8;
+      --green  : #a6e3a1;
+      --red    : #f38ba8;
+      --orange : #fab387;
+      --blue   : #89b4fa;
+      --dark   : #1e1e2e;
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background : var(--bg);
+      color      : var(--text);
+      min-height : 100vh;
+      padding    : 20px;
+    }
+
+    /* ── Header ─────────────────── */
+    header {
+      display        : flex;
+      justify-content: space-between;
+      align-items    : center;
+      margin-bottom  : 20px;
+      flex-wrap      : wrap;
+      gap            : 10px;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    .nav-btn {
+      padding      : 8px 16px;
+      background   : var(--surface);
+      color        : var(--text);
+      border       : 1px solid var(--border);
+      border-radius: 8px;
+      cursor       : pointer;
+      font-size    : 13px;
+      text-decoration: none;
+    }
+    .nav-btn:hover { background: var(--border); }
+
+    /* ── Controls ───────────────── */
+    .controls {
+      display    : flex;
+      gap        : 10px;
+      margin-bottom: 20px;
+      flex-wrap  : wrap;
+      align-items: center;
+    }
+    .btn {
+      padding      : 9px 20px;
+      border-radius: 8px;
+      border       : none;
+      font-size    : 14px;
+      font-weight  : 700;
+      cursor       : pointer;
+      transition   : opacity 0.2s;
+    }
+    .btn:hover  { opacity: 0.85; }
+    .btn-blue   { background: var(--blue);   color: var(--dark); }
+    .btn-green  { background: var(--green);  color: var(--dark); }
+    .btn-orange { background: var(--orange); color: var(--dark); }
+    .btn-red    { background: var(--red);    color: var(--dark); }
+
+    input[type="text"], input[type="number"] {
+      padding      : 8px 12px;
+      background   : var(--surface);
+      color        : var(--text);
+      border       : 1px solid var(--border);
+      border-radius: 8px;
+      font-size    : 14px;
+    }
+    input:focus { outline: 2px solid var(--blue); }
+
+    /* ── Status message ─────────── */
+    .status-msg {
+      padding      : 10px 16px;
+      border-radius: 8px;
+      font-size    : 14px;
+      font-weight  : 600;
+      margin-bottom: 16px;
+      display      : none;
+    }
+    .status-msg.show  { display: block; }
+    .status-msg.ok    { background: var(--green);  color: var(--dark); }
+    .status-msg.error { background: var(--red);    color: var(--dark); }
+    .status-msg.info  { background: var(--blue);   color: var(--dark); }
+
+    /* ── Add product form ───────── */
+    .add-form {
+      background   : var(--surface);
+      border-radius: 12px;
+      padding      : 16px;
+      margin-bottom: 20px;
+      display      : none;
+    }
+    .add-form.show { display: block; }
+    .add-form h3   { margin-bottom: 12px; font-size: 15px; color: var(--blue); }
+    .form-row {
+      display  : flex;
+      gap      : 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; color: var(--subtext); }
+    .form-group input { width: 200px; }
+    .form-group input[type="number"] { width: 120px; }
+
+    /* ── Product grid ───────────── */
+    .grid {
+      display              : grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap                  : 14px;
+    }
+    .product-card {
+      background   : var(--surface);
+      border-radius: 12px;
+      padding      : 14px;
+      border       : 1px solid var(--border);
+      transition   : border-color 0.2s;
+      position     : relative;
+    }
+    .product-card:hover { border-color: var(--blue); }
+
+    .card-name {
+      font-size  : 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .card-price {
+      font-size : 13px;
+      color     : var(--green);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .card-barcode {
+      font-size    : 11px;
+      color        : var(--subtext);
+      font-family  : monospace;
+      background   : var(--bg);
+      padding      : 4px 8px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* Barcode image preview */
+    .barcode-preview {
+      background   : white;
+      border-radius: 8px;
+      padding      : 8px;
+      text-align   : center;
+      margin-bottom: 10px;
+      min-height   : 70px;
+      display      : flex;
+      align-items  : center;
+      justify-content: center;
+    }
+    .barcode-preview img {
+      max-width : 100%;
+      max-height: 65px;
+    }
+    .barcode-preview .loading {
+      color    : #888;
+      font-size: 12px;
+    }
+
+    /* Card actions */
+    .card-actions {
+      display: flex;
+      gap    : 6px;
+    }
+    .card-btn {
+      flex         : 1;
+      padding      : 6px;
+      border-radius: 6px;
+      border       : none;
+      font-size    : 12px;
+      font-weight  : 700;
+      cursor       : pointer;
+      transition   : opacity 0.2s;
+    }
+    .card-btn:hover { opacity: 0.8; }
+    .btn-print  { background: var(--blue);   color: var(--dark); }
+    .btn-delete { background: var(--red);    color: var(--dark); }
+
+    /* ── Print modal ────────────── */
+    .modal-overlay {
+      position  : fixed;
+      inset     : 0;
+      background: rgba(0,0,0,0.7);
+      display   : none;
+      align-items: center;
+      justify-content: center;
+      z-index   : 100;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background   : var(--surface);
+      border-radius: 16px;
+      padding      : 24px;
+      width        : 90%;
+      max-width    : 480px;
+      text-align   : center;
+    }
+    .modal h2      { margin-bottom: 8px; }
+    .modal p       { color: var(--subtext); font-size: 13px; margin-bottom: 16px; }
+    .modal-barcode {
+      background   : white;
+      border-radius: 10px;
+      padding      : 16px;
+      margin-bottom: 16px;
+    }
+    .modal-barcode img { max-width: 100%; }
+    .modal-name  { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .modal-price { font-size: 14px; color: var(--green); margin-bottom: 4px; }
+    .modal-code  { font-size: 11px; color: var(--subtext); font-family: monospace; }
+    .modal-btns  { display: flex; gap: 10px; justify-content: center; }
+
+    @media print {
+      body * { visibility: hidden; }
+      .modal-overlay, .modal-overlay * { visibility: visible; }
+      .modal-overlay {
+        position: absolute; inset: 0;
+        background: white;
+        display: flex !important;
+      }
+      .modal { box-shadow: none; background: white; }
+      .modal-btns, header { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <h1>🏷️ Barcode Manager</h1>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-green" onclick="generateAll()">
+        📄 Generate All PDF
+      </button>
+      <a href="/" class="nav-btn">← Back to Cart</a>
+    </div>
+  </header>
+
+  <!-- Status Message -->
+  <div class="status-msg" id="statusMsg"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-blue" onclick="toggleAddForm()">
+      ➕ Add Product
+    </button>
+    <button class="btn btn-orange" onclick="printAll()">
+      🖨️ Print All
+    </button>
+    <input type="text" id="searchInput"
+      placeholder="🔍 Search products..."
+      oninput="filterProducts()"
+      style="width:200px"/>
+    <span id="productCount"
+      style="color:var(--subtext);font-size:13px"></span>
+  </div>
+
+  <!-- Add Product Form -->
+  <div class="add-form" id="addForm">
+    <h3>➕ Add New Product</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="newName" placeholder="e.g. Corn Flakes 500g"/>
+      </div>
+      <div class="form-group">
+        <label>Price ($)</label>
+        <input type="number" id="newPrice" placeholder="2.50" min="0" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label>Barcode (12 digits)</label>
+        <input type="text" id="newBarcode" placeholder="auto-generated" maxlength="12"/>
+      </div>
+      <div class="form-group" style="justify-content:flex-end">
+        <button class="btn btn-green" onclick="addProduct()">Add Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Grid -->
+  <div class="grid" id="productGrid"></div>
+
+  <!-- Print Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal">
+      <div class="modal-name"  id="modalName"></div>
+      <div class="modal-price" id="modalPrice"></div>
+      <div class="modal-barcode">
+        <img id="modalImg" src="" alt="Barcode"/>
+      </div>
+      <div class="modal-code" id="modalCode"></div>
+      <br/>
+      <div class="modal-btns">
+        <button class="btn btn-blue"  onclick="window.print()">🖨️ Print</button>
+        <button class="btn btn-red"   onclick="document.getElementById('modalOverlay').classList.remove('show')">✕ Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io({ reconnection: true });
+
+    let allProducts = {};
+    let barcodeImages = {};
+
+    // ── Load products on start ────────────────
+    socket.on("connect", () => {
+      socket.emit("get_products");
+    });
+
+    socket.on("products_data", (data) => {
+      allProducts = data;
+      renderGrid(allProducts);
+      document.getElementById("productCount").textContent =
+        `${Object.keys(data).length} products`;
+    });
+
+    socket.on("barcode_image", (data) => {
+      // Receive base64 barcode image for a product
+      barcodeImages[data.barcode] = data.image;
+      const previewEl = document.getElementById(`preview_${data.barcode}`);
+      if (previewEl) {
+        previewEl.innerHTML = `<img src="data:image/png;base64,${data.image}" alt="barcode"/>`;
+      }
+    });
+
+    socket.on("product_added", (data) => {
+      showStatus("✅ Product added successfully!", "ok");
+      socket.emit("get_products");
+      document.getElementById("addForm").classList.remove("show");
+      clearForm();
+    });
+
+    socket.on("product_deleted", (data) => {
+      showStatus(`🗑️ ${data.name} removed`, "info");
+      socket.emit("get_products");
+    });
+
+    socket.on("generate_pdf_done", (data) => {
+      showStatus("✅ PDF generated! Check barcodes/barcode_sheet.pdf", "ok");
+    });
+
+    socket.on("error_msg", (data) => {
+      showStatus("❌ " + data.message, "error");
+    });
+
+    // ── Render product grid ───────────────────
+    function renderGrid(products) {
+      const grid = document.getElementById("productGrid");
+      const entries = Object.entries(products);
+
+      if (entries.length === 0) {
+        grid.innerHTML = `<p style="color:var(--subtext);grid-column:1/-1;text-align:center;padding:40px">
+          No products yet. Add one above!</p>`;
+        return;
+      }
+
+      grid.innerHTML = entries.map(([barcode, info]) => `
+        <div class="product-card" id="card_${barcode}">
+          <div class="card-name">${info.name}</div>
+          <div class="card-price">$${info.price.toFixed(2)}</div>
+          <div class="card-barcode">${barcode}</div>
+          <div class="barcode-preview" id="preview_${barcode}">
+            <span class="loading">Loading barcode...</span>
+          </div>
+          <div class="card-actions">
+            <button class="card-btn btn-print"
+              onclick="showModal('${barcode}','${info.name.replace(/'/g,"\\'")}',${info.price})">
+              🖨️ Print
+            </button>
+            <button class="card-btn btn-delete"
+              onclick="deleteProduct('${barcode}','${info.name.replace(/'/g,"\\'")}')">
+              🗑️ Delete
+            </button>
+          </div>
+        </div>
+      `).join("");
+
+      // Request barcode images from server
+      entries.forEach(([barcode]) => {
+        socket.emit("get_barcode_image", { barcode: barcode });
+      });
+    }
+
+    // ── Filter / search ───────────────────────
+    function filterProducts() {
+      const q = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = {};
+      for (const [bc, info] of Object.entries(allProducts)) {
+        if (info.name.toLowerCase().includes(q) || bc.includes(q)) {
+          filtered[bc] = info;
+        }
+      }
+      renderGrid(filtered);
+    }
+
+    // ── Add product ───────────────────────────
+    function toggleAddForm() {
+      document.getElementById("addForm").classList.toggle("show");
+    }
+
+    function clearForm() {
+      document.getElementById("newName").value    = "";
+      document.getElementById("newPrice").value   = "";
+      document.getElementById("newBarcode").value = "";
+    }
+
+    function addProduct() {
+      const name    = document.getElementById("newName").value.trim();
+      const price   = parseFloat(document.getElementById("newPrice").value);
+      const barcode = document.getElementById("newBarcode").value.trim()
+                      || generateBarcode();
+
+      if (!name)        return showStatus("❌ Please enter a product name", "error");
+      if (isNaN(price)) return showStatus("❌ Please enter a valid price",  "error");
+
+      socket.emit("add_product", { name, price, barcode });
+    }
+
+    function generateBarcode() {
+      // Generate random 12-digit barcode
+      return String(Math.floor(Math.random() * 9e11 + 1e11));
+    }
+
+    // ── Delete product ────────────────────────
+    function deleteProduct(barcode, name) {
+      if (confirm(`Remove "${name}" from the product list?`)) {
+        socket.emit("delete_product", { barcode });
+      }
+    }
+
+    // ── Generate all PDF ──────────────────────
+    function generateAll() {
+      showStatus("⏳ Generating PDF... please wait", "info");
+      socket.emit("generate_pdf");
+    }
+
+    // ── Print all (browser print dialog) ─────
+    function printAll() {
+      window.print();
+    }
+
+    // ── Show single barcode modal ─────────────
+    function showModal(barcode, name, price) {
+      document.getElementById("modalName").textContent  = name;
+      document.getElementById("modalPrice").textContent = `$${price.toFixed(2)}`;
+      document.getElementById("modalCode").textContent  = barcode;
+
+      const img = document.getElementById("modalImg");
+      if (barcodeImages[barcode]) {
+        img.src = `data:image/png;base64,${barcodeImages[barcode]}`;
+      } else {
+        img.src = "";
+        socket.emit("get_barcode_image", { barcode });
+        socket.once("barcode_image", (data) => {
+          if (data.barcode === barcode) {
+            img.src = `data:image/png;base64,${data.image}`;
+          }
+        });
+      }
+
+      document.getElementById("modalOverlay").classList.add("show");
+    }
+
+    function closeModal(e) {
+      if (e.target.id === "modalOverlay") {
+        document.getElementById("modalOverlay").classList.remove("show");
+      }
+    }
+
+    // ── Status helper ─────────────────────────
+    function showStatus(msg, type) {
+      const el = document.getElementById("statusMsg");
+      el.textContent = msg;
+      el.className   = `status-msg show ${type}`;
+      setTimeout(() => el.classList.remove("show"), 4000);
+    }
+  </script>
+</body>
+</html>
