@@ -10,7 +10,7 @@
     </td>
     <td align="center" width="50%">
       <img src="https://github.com/user-attachments/assets/972678e3-d918-4742-976b-8ea40d1160c5" width="95%" alt="Sensor Alignment"><br>
-      <sub><b>Sensor Alignment</b></sub>
+      <sub><b>Hardware Implementation</b></sub>
     </td>
   </tr>
   <tr>
