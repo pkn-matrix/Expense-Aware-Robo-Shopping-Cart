@@ -1,3 +1,4 @@
+<img width="3024" height="4032" alt="IMG-20260503-WA0015" src="https://github.com/user-attachments/assets/bafc75e0-64e6-4113-9042-b6986138cf7c" />
 ## 🚀 Features
 * **Autonomous Shopper Following:** Utilizes sensor-driven navigation to safely follow a user through market aisles.
 * **Real-Time Expense Tracking:** Automatically logs items as they are added to the cart and displays a running total.
