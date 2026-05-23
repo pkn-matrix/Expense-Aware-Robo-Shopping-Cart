@@ -21,7 +21,7 @@ The system uses a master-slave configuration to split heavy computation and low-
 ---
 
 ## 📅 Project Roadmap
-- [ ] Assemble the 4WD chassis and configure the DC geared motors.
-- [ ] Establish stable serial communication between the Raspberry Pi 5 and Arduino.
-- [ ] Implement the basic autonomous following algorithm.
-- [ ] Integrate the item tracking module and expense calculator UI.
+- [x] Assemble the 4WD chassis and configure the DC geared motors. (Code initialized in [arduino/](arduino))
+- [x] Establish stable serial communication between the Raspberry Pi 5 and Arduino. (Implemented via `pyserial` in [app.py](app.py))
+- [x] Implement the basic autonomous following algorithm. (Developed in [human_following.py](human_following.py))
+- [x] Integrate the item tracking module and expense calculator UI. (Configured in [scanner.py](scanner.py) and [templates/](templates))
