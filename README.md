@@ -48,9 +48,18 @@ The system uses a master-slave configuration to split heavy computation and low-
 
 ---
 
-## 💻 Tech Stack
-* **Languages:** Python (Raspberry Pi), C++ (Arduino)
-* **Frameworks/Libraries:** `pyserial` (for Pi-to-Arduino communication)
+## 💻🛠️ Tech Stack 
+
+* **Core Vision & Detection:**
+  * **OpenCV:** Powers the primary camera feed processing and frame manipulation.
+  * **YOLO:** Handles real-time object detection for shopper-following logic and obstacle avoidance.
+  * **pyzbar:** Decodes barcodes/QR codes instantly as items are added to the cart.
+* **Backend & Communication:**
+  * **Flask:** Serves the lightweight web application backend running locally on the Raspberry Pi 5.
+  * **Socket.IO:** Establishes low-latency, real-time WebSocket communication to sync item pricing and cart weight calculations instantly.
+* **Languages & Low-Level Control:**
+  * **Python & C++:** Driving the Raspberry Pi 5 core logic and Arduino UNO sensor tracking respectively.
+  * **pyserial:** Manages the stable, bidirectional USB serial communication link between both microcontrollers.
 
 ---
 
